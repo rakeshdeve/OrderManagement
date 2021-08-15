@@ -1,0 +1,220 @@
+﻿<div>
+    <div>
+        <button type="button" class="btn btn-primary" id="btnDeleteOrder" style="float:right; display:none" >Delete</button>
+        <button type="button" class="btn btn-primary maR10" id="addOrder" style="float:right" onclick="fnAddOrder()">Add</button>
+    </div>
+    <table class="table table-bordered" id="tblOrders">
+        <thead>
+            <tr class="thead-dark">
+                <th class="taC">
+                    All
+                    <input type="checkbox" class="css-checkbox" id="IsAllCheckBox" onclick="fnCheckAll()"/>
+                    <label class="css-checkbox" for="IsAllCheckBox"></label>
+                </th>
+                <th class="tal">
+                    Order Id
+                </th>
+                <th class="taC">
+                    Order Date
+                </th>
+                <th class="taC">
+                    Order Number
+                </th>
+                <th class="taC">
+                    Order Amount
+                </th>
+                <th class="taC">
+                    Vendor
+                </th>
+                <th class="taC">
+                    Shop
+                </th>
+                <th class="taC">
+                    Action
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+</div>
+<div class="modal" id="myModal" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content" id="ModelBody">
+        </div>
+    </div>
+</div>
+
+<script>
+    var orderTable;
+
+    $(function () {
+
+        //Datatable for render tables
+        orderTable = $("#tblOrders").DataTable({
+            "bStateSave": true,
+            "bPaginate": false,
+            "autoWidth": false,
+            "bRetrieve": true,
+            "showNEntries": false,
+            "searching": false,
+            "bInfo": false,
+            "ordering": false,
+            "bServerSide": true,
+            "sAjaxSource": "/Order/GetOrdersListJson/",
+            "bProcessing": true,
+            "aoColumns": [
+                {
+                    "CheckBox": "t.CheckBox",
+                    "render": function (oObj, a, b) {
+                        var _html = '<div class="taC">';
+                        _html += '<a href="javascript:void(0);"> ' + '<input type="checkbox" class="css-checkbox checkedall"  onclick="CheckIndividual(' + b[0] + ')"  id="check_' + b[0] + '" value=' + b[0] + '>' + '<label class="css-labelbox" id="check_' + b[0] + '" for="check_' + b[0] + '"></label>' + '</a>';
+                        return _html;
+                    },
+                    "bSortable": false
+                },
+                {
+                    "OrderId": "t.OrderId",
+                    "render": function (oObj, a, b) {
+                        return b[0];
+                    },
+                    "bSortable": false
+                },
+                {
+                    "OrderDate": "t.OrderDate",
+                    "render": function (oObj, a, b) {
+                        return b[1];
+                    },
+                    "bSortable": false
+                },
+                {
+                    "OrderNumber": "t.OrderNumber",
+                    "render": function (oObj, a, b) {
+                        return b[2];
+                    },
+                    "bSortable": false
+                },
+                {
+                    "OrderNumber": "t.OrderAmount",
+                    "render": function (oObj, a, b) {
+                        return "<div class='taR'> $" + parseFloat(b[3]).toFixed(2) + "</div>";
+                    },
+                    "bSortable": false
+                },
+                {
+                    "VendorName": "t.VendorName",
+                    "render": function (oObj, a, b) {
+                        return b[4];
+                    },
+                    "bSortable": false
+                },
+                {
+                    "Shop": "t.Shop",
+                    "render": function (oObj, a, b) {
+                        return b[5];
+                    },
+                    "bSortable": false
+                },
+                {
+                    "Action": "t.Action",
+                    "render": function (oObj, a, b) {
+                        var _html = '<div class="taC">';
+                        _html += '<a href="javascript:void(0);" onclick="fnAddOrder(' + b[0] + ');">    <i class="far fa-edit" alt="Edit" title="Edit"></i></a>'
+                        _html += '<a href="javascript:void(0);" class="mRight10" onclick="fnDeleteOrderIndividual(' + b[0] + ');">    <i class="fa fa-trash" alt="Delete" title="Delete"></i></a> </div>'
+                        return _html;
+                    },
+                    "bSortable": false
+                },
+            ],
+
+            "sEmptyTable": function () {
+                return "No records found"
+            }
+        });
+    });
+
+    //Add order function
+    function fnAddOrder(id) {
+        $.ajax({
+            url: '/Order/_AddOrder/',
+            type: 'GET',
+            data: { id: id},
+            success: function (data) {
+                $("#ModelBody").html(data);
+                $("#myModal").modal({ backdrop: 'static', keyboard: true });
+                $('#myModal').modal('show');
+            }
+        })
+    }
+
+    //Check all function
+    function fnCheckAll() {
+        if ($("#IsAllCheckBox").is(":checked")) {
+            $("#tblOrders input[type=checkbox]").each(function () {
+                $(this).prop("checked", true);
+            });
+        }
+        else {
+            $("#tblOrders input[type=checkbox]").each(function () {
+                $(this).prop("checked", false);
+            });
+        }
+        fnShowHideBtn();
+    }
+
+     //Check individual checkbox function
+    function CheckIndividual() {
+        fnShowHideBtn();
+    }
+
+    //Show hide Delete order button based on checked count
+    function fnShowHideBtn() {
+        var count = $('input[id^="check_"]:checked').length;
+        if (count > 0) {
+            $("#btnDeleteOrder").show();
+        } else {
+            $("#btnDeleteOrder").hide();
+        }
+
+        if ($('.checkedall:checked').length == $('.checkedall').length) {
+            $("#IsAllCheckBox").prop('checked', true);
+        }
+        else {
+            $("#IsAllCheckBox").prop('checked', false);
+        }
+    }
+
+    //Delete Button Click Function
+    $("#btnDeleteOrder").click(function () {
+        var idsArray = [];
+        $('input[id^="check_"]:checked').each(function () {
+            var id = $(this).val();
+            if (parseInt(id) > 0)
+            {
+                idsArray.push(id);
+            }
+        });
+        fnDeleteOrder(idsArray);
+    })
+
+    //Delete inside the table
+    function fnDeleteOrderIndividual(id) {
+        var idsArray = [];
+        idsArray.push(id);
+        fnDeleteOrder(idsArray);
+    }
+
+    //Deleted Order common function
+    function fnDeleteOrder(idsArray) {
+
+        $.ajax({
+            url: '/Order/DeleteOrder/',
+            type: 'POST',
+            data: { OrderIdList: idsArray },
+            success: function (data) {
+                orderTable.ajax.reload();
+            }
+        })
+    }
+
+</script>

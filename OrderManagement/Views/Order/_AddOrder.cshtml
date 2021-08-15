@@ -1,0 +1,166 @@
+﻿@model OrderManagement.Models.Order
+@{ 
+    //Dropdown
+    var vendorList = new List<SelectListItem>();
+    vendorList.Add(new SelectListItem { Text = "--Select--", Value = "" });
+    vendorList.Add(new SelectListItem { Text = "Ford", Value = "Ford" });
+    vendorList.Add(new SelectListItem { Text = "Chevy", Value = "Chevy" });
+    vendorList.Add(new SelectListItem { Text = "Benz", Value = "Benz" });
+
+    long orderId = Model != null && Model.OrderId > 0 ? Model.OrderId : 0;
+}
+
+<div class="modal-header">
+    <h4 id="form_heading" class="modal-title taC">
+        <label id="lblHeading">Order Details</label>
+    </h4>
+    <button type="button" class="close" data-dismiss="modal">&times;</button>
+</div>
+<div class="modal-body">
+    @using (Html.BeginForm("_AddOrder", "Order", FormMethod.Post, new { id = "addOrderForm" }))
+    {
+        <table class="">
+            <tr>
+                <td>
+                    <span class="red">*</span>Order Number:
+                </td>
+                <td class="">
+                    @Html.TextBoxFor(m => m.OrderNumber, new { @id = "orderNumber", @tabindex = "1", @class="allow_numeric" })
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" class="spacer20"></td>
+            </tr>
+            <tr>
+                <td>
+                    <span class="red">*</span>Order Date:
+                </td>
+                <td class="">
+                    @Html.TextBoxFor(m => m.OrderDate, "{0:MM\\/dd\\/yyyy}", new { @id = "orderDate", tabindex = "2" })
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" class="spacer20"></td>
+            </tr>
+            <tr>
+                <td>
+                    <span class="red">*</span>Order Amount:
+                </td>
+                <td class="">
+                    @Html.TextBoxFor(m => m.OrderAmount, "{0:0.00}", new { id = "orderAmount", tabindex = "3", maxlength="9", @class = "allow_numeric" })
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" class="spacer20"></td>
+            </tr>
+            <tr>
+                <td>
+                    <span class="red">*</span>Vendor:
+                </td>
+                <td>
+                    @Html.DropDownList("VendorName", vendorList, new { id = "ddnVendor", tabindex = "4" })
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" class="spacer20"></td>
+            </tr>
+            <tr>
+                <td>
+                    <span class="red">*</span>Shop:
+                </td>
+                <td class="">
+                    @Html.TextBoxFor(m => m.Shop, new { id = "shop", tabindex = "5", @class = "allow_numeric" })
+                </td>
+            </tr>
+        </table>
+        @Html.HiddenFor(s => s.OrderId)
+    }
+</div>
+<div class="modal-footer align-items-center" style="justify-content: center;">
+    <div class="taC">
+        @if (orderId > 0)
+        {
+            <button type="button" id="btnSave" class="btn btn-primary taC" onclick="fnSaveOrder();"> Update</button>
+        }
+        else
+        {
+            <button type="button" id="btnSave" class="btn btn-primary taC" onclick="fnSaveOrder();"> Save</button>
+        }
+    </div>
+</div>
+
+<script>
+    $(function () {
+        $("#orderDate").datepicker({
+            orientation: "top right"
+        });
+
+
+        var form = $('#addOrderForm').get(0);
+        $.removeData(form, 'validator');
+
+        $("#addOrderForm").validate({
+            rules: {
+                ignore: ":not(:visible)",
+                OrderNumber: {
+                    required: true,
+                },
+                OrderDate: {
+                    required: true,
+                },
+                OrderAmount: {
+                    required: true,
+                },
+                VendorName: {
+                    required: true,
+                },
+                Shop: {
+                    required: true,
+                }
+            },
+            message: {
+                OrderNumber: {
+                    required: 'Order number is required',
+                },
+                OrderDate: {
+                    required: 'Order date is required',
+                },
+                OrderAmount: {
+                    required: 'Order amount is required',
+                },
+                VendorName: {
+                    required: 'please select vendor',
+                },
+                Shop: {
+                    required: 'shop is required',
+                }
+            }
+        });
+    })
+    function fnSaveOrder() {
+        if ($("#addOrderForm").valid()) {
+            $("#btnSave").attr("disabled", true);
+            var form = $("#addOrderForm").serialize();
+            $.ajax({
+                url: '/Order/SaveOrder/',
+                type: 'POST',
+                data: form,
+                success: function (data) {
+                    if (data) {
+                        $("#btnSave").attr("disabled", false);
+                        $('#myModal').modal("hide");
+                        orderTable.ajax.reload();
+                    }
+                }
+            })
+        }
+    }
+
+    $(".allow_numeric").on("input", function (evt) {
+        var currentVal = $(this);
+        currentVal.val(currentVal.val().replace(/\D/g, ""));
+        if ((evt.which < 48 || evt.which > 57)) {
+            evt.preventDefault();
+        }
+    });
+</script>
